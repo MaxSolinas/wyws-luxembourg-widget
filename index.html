@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Water Hardness Luxembourg Widget</title>
+  <title>What's Your Water Score - Luxembourg</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body style="margin:0;padding:0;background:#ffffff;">
@@ -11,10 +11,9 @@
   
   <div class="kw-header">
     <h2 class="kw-headline">
-        <span class="kw-top-line">WHAT'S YOUR</span>
+        <span class="kw-top-line">WHAT'S YOUR</</span>
         <span class="kw-second-line">
-            <span class="kw-word-water">WATER</span>
-            <span class="kw-word-score">SCORE?<sup class="kw-tm">TM</sup></span>
+            <span class="kw-word-water">WATER</span> <span class="kw-word-score">SCORE?<sup class="kw-tm">TM</sup></span>
         </span>
     </h2>
     <div class="kw-subtext">Découvrez la qualité de votre eau en quelques secondes.</div>
@@ -53,18 +52,18 @@
     <div class="kw-commune-title"></div>
 
     <div class="kw-message-box">
-      <strong class="kw-verdict-title"></strong>
-      <p class="kw-verdict-desc"></p>
+      <strong class="kw-verdict-title" style="font-size: 1.2em; display:block; margin-bottom:8px;"></strong>
+      <p class="kw-verdict-desc" style="font-size: 0.95em; color:#555; margin:0; line-height: 1.5;"></p>
       <a href="/durete-de-leau-au-luxembourg#Obtenez-votre-devis" class="kw-cta-button">
-        RAISE YOUR WATER SCORE TODAY!
+        Recevoir ma recommandation personnalisée
       </a>
     </div>
   </div>
 
-  <div class="kw-vdl-container" style="display:none; text-align:center;">
-      <p>La Ville de Luxembourg possède un réseau complexe avec plusieurs sources d'eau différentes.</p>
+  <div class="kw-vdl-container" style="display:none; text-align: center; margin: 20px 0;">
+      <p style="color:#666;">La Ville de Luxembourg possède un réseau complexe avec plusieurs sources d'eau différentes.</p>
       <a href="https://www.vdl.lu/fr/vivre/domicile-au-quotidien/verifier-la-qualite-de-leau-chez-soi#" target="_blank" class="kw-redirect-btn">
-        Vérifier mon adresse précise sur vdl.lu
+          Vérifier mon adresse précise sur vdl.lu
       </a>
   </div>
 
@@ -72,33 +71,247 @@
       <div class="kw-dealer-info">
           Aqua Purify<br>Authorized, Independent Kinetico Dealer
       </div>
-      <span class="kw-source-data">
-        Données : data.public.lu / Administration de la gestion de l'eau
-      </span>
+      <span class="kw-source-data">Données : data.public.lu / Administration de la gestion de l'eau</span>
   </div>
 
 </div>
 
-<!-- ===================== -->
-<!-- ✅ AUTO-RESIZE IFRAME -->
-<!-- ===================== -->
-
 <script>
-function sendWidgetHeight() {
-  const height = document.body.scrollHeight;
-  window.parent.postMessage(
-    { type: "WYWS_HEIGHT", height: height },
-    "*"
-  );
-}
+(function() {
+  // --- INJECTION CSS UNE SEULE FOIS ---
+  if (!document.getElementById('kw-global-styles-v23')) {
+      const css = `
+        .kinetico-lux-widget-wrapper { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 20px auto; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: visible; text-align: center; position: relative; padding-bottom: 20px; }
+        .kw-header { padding: 30px 20px 10px; border-radius: 12px 12px 0 0; }
+        .kw-headline { text-transform: uppercase; line-height: 1.1; color: #00ADEF; font-size: 2.2rem; margin: 0; }
+        .kw-top-line { font-weight: 800; display: block; }
+        .kw-second-line { display: block; color: #0054A4; }
+        .kw-word-water { font-weight: 400; } .kw-word-score { font-weight: 800; }
+        .kw-tm { font-size: 0.3em; vertical-align: top; position: relative; top: 0.1em; font-weight: 400; margin-left: 2px; line-height: 1; }
+        .kw-subtext { color: #666; margin-top: 10px; font-size: 0.95rem; }
+        .kw-search-area { padding: 0 30px 10px; position: relative; }
+        .kw-input { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 50px; font-size: 16px; outline: none; text-align: center; transition: 0.3s; }
+        .kw-input:focus { border-color: #0054A4; box-shadow: 0 0 0 3px rgba(0, 84, 164, 0.1); }
+        .kw-suggestions { position: absolute; top: 65px; left: 30px; right: 30px; background: white; border: 1px solid #cce4f7; z-index: 9999; max-height: 250px; overflow-y: auto; box-shadow: 0 15px 30px rgba(0,0,0,0.15); display: none; border-radius: 8px; }
+        .kw-suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; text-align: left; }
+        .kw-suggestion-item:hover { background: #f0f7ff; color: #0054A4; }
+        
+        .kw-slider-wrapper { padding: 0 20px; transition: opacity 0.3s; }
+        .kw-slider-container { position: relative; height: 60px; margin: 20px 10px; }
+        .kw-slider-bar { height: 40px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #F57F20 0%, #E5007E 50%, #00ADEF 100%); position: relative; top: 10px; }
+        .kw-grid-lines { position: absolute; top: 10px; left: 0; width: 100%; height: 40px; display: flex; justify-content: space-between; pointer-events: none; }
+        .kw-line { width: 1px; background: rgba(255,255,255,0.4); height: 100%; }
+        .kw-water-drop { position: absolute; top: -15px; transform: translateX(-50%); width: 50px; height: 65px; transition: left 1.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s; z-index: 10; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2)); }
+        .kw-drop-shape { width: 42px; height: 42px; background: #00ADEF; border-radius: 0 50% 50% 50%; transform: rotate(45deg); margin: 0 auto; border: 3px solid white; transition: background 1.5s; }
+        .kw-drop-value { position: absolute; top: 13px; left: 0; width: 100%; text-align: center; color: white; font-weight: 800; font-size: 15px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .kw-labels { display: flex; justify-content: space-between; margin-top: 15px; color: #999; font-size: 11px; font-weight: bold; padding: 0 2px; }
+        
+        .kw-result-panel { padding: 0 20px 10px; animation: kw-fadein 0.6s ease-out; }
+        .kw-commune-title { font-size: 1.3rem; font-weight: bold; color: #0054A4; margin-top: 10px; }
+        .kw-message-box { background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px; }
+        .kw-cta-button { display: none; margin-top: 15px; background: #0054A4; color: white; text-decoration: none; padding: 14px 30px; border-radius: 6px; font-weight: bold; transition: 0.3s; text-transform: uppercase; letter-spacing: 0.5px; }
+        .kw-cta-button:hover { background: #003d7a; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,84,164,0.3); }
+        .kw-redirect-btn { display: inline-block; background-color: #00ADEF; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 15px; transition: background-color 0.3s; }
+        .kw-redirect-btn:hover { background-color: #005bb8; }
+        
+        .kw-footer-block { margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; margin-left: 20px; margin-right: 20px; }
+        .kw-dealer-info { font-size: 11px; color: #555; font-weight: 400; font-family: Arial, sans-serif; line-height: 1.4; display: block; }
+        .kw-source-data { font-size: 9px; color: #aaa; margin-top: 10px; display: block; }
+        .kw-loader { color: #888; display: none; margin: 10px; font-style: italic; }
+        .kw-error-msg { color: #d32f2f; display: none; margin: 10px; font-weight: bold; }
+        @keyframes kw-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      `;
+      const style = document.createElement('style');
+      style.id = 'kw-global-styles-v23';
+      style.textContent = css;
+      document.head.appendChild(style);
+  }
 
-window.addEventListener("load", sendWidgetHeight);
+  const widgets = document.querySelectorAll('.kinetico-lux-widget-wrapper:not([data-init])');
+  const API_URL = 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson';
+  let globalCommunesData = null;
 
-new MutationObserver(sendWidgetHeight).observe(document.body, {
-  attributes: true,
-  childList: true,
-  subtree: true
-});
+  function sendWidgetHeight() {
+    // Envoi au parent (Odoo) pour ajuster l'iframe
+    if (window.parent) {
+      const h = document.documentElement.scrollHeight || document.body.scrollHeight;
+      window.parent.postMessage({ type: 'WYWS_HEIGHT', height: h }, '*');
+    }
+  }
+
+  async function loadCommunesData(loader, errorMsg) {
+      if (globalCommunesData) return globalCommunesData;
+      if (loader) loader.style.display = 'block';
+      try {
+          const response = await fetch(API_URL);
+          if (!response.ok) throw new Error('Erreur réseau: ' + response.status);
+          const geoData = await response.json();
+          const communesMap = new Map();
+          
+          geoData.features.forEach(feature => {
+              const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
+              const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
+              if (name && !name.startsWith('*')) {
+                  if (!communesMap.has(name)) {
+                      communesMap.set(name, { name: name, th: th !== null ? th : 0 });
+                  }
+              }
+          });
+          globalCommunesData = Array.from(communesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+          if (loader) loader.style.display = 'none';
+          sendWidgetHeight();
+          return globalCommunesData;
+      } catch(e) {
+          console.error('[Lux widget] Erreur chargement données:', e);
+          if (loader) loader.style.display = 'none';
+          if (errorMsg) {
+            errorMsg.textContent = "Service momentanément indisponible.";
+            errorMsg.style.display = 'block';
+          }
+          sendWidgetHeight();
+          throw e;
+      }
+  }
+
+  widgets.forEach(widget => {
+      widget.setAttribute('data-init', 'true');
+      
+      const input = widget.querySelector('.kw-input');
+      const suggestions = widget.querySelector('.kw-suggestions');
+      const sliderWrapper = widget.querySelector('.kw-slider-wrapper');
+      const resultPanel = widget.querySelector('.kw-result-panel');
+      const loader = widget.querySelector('.kw-loader');
+      const errorMsg = widget.querySelector('.kw-error-msg');
+      
+      const displayCommune = widget.querySelector('.kw-commune-title');
+      const vdlContainer = widget.querySelector('.kw-vdl-container');
+      
+      const drop = widget.querySelector('.kw-water-drop');
+      const dropShape = widget.querySelector('.kw-drop-shape');
+      const scoreVal = widget.querySelector('.kw-drop-value');
+      const verdictTitle = widget.querySelector('.kw-verdict-title');
+      const verdictDesc = widget.querySelector('.kw-verdict-desc');
+      const ctaBtn = widget.querySelector('.kw-cta-button');
+
+      loadCommunesData(loader, errorMsg).catch(() => {});
+
+      input.addEventListener('input', (e) => {
+          const val = e.target.value.toLowerCase();
+          
+          if(val.length < 2) { 
+              suggestions.style.display = 'none'; 
+              if(val.length === 0) {
+                  drop.style.opacity = '0';
+                  resultPanel.style.display = 'none';
+                  vdlContainer.style.display = 'none';
+                  sliderWrapper.style.display = 'block';
+                  sendWidgetHeight();
+              }
+              return; 
+          }
+          
+          if (!globalCommunesData) return;
+
+          const matches = globalCommunesData
+            .filter(c => c.name.toLowerCase().includes(val))
+            .slice(0, 8);
+
+          suggestions.innerHTML = '';
+          
+          if(!matches.length) { suggestions.style.display = 'none'; return; }
+
+          matches.forEach(c => {
+              const div = document.createElement('div');
+              div.className = 'kw-suggestion-item';
+              div.textContent = c.name;
+              div.onclick = () => {
+                  input.value = c.name;
+                  suggestions.style.display = 'none';
+                  processSelection(c);
+              };
+              suggestions.appendChild(div);
+          });
+          suggestions.style.display = 'block';
+          sendWidgetHeight();
+      });
+
+      function processSelection(commune) {
+          displayCommune.textContent = "Qualité de l'eau à " + commune.name;
+          
+          if (commune.name === 'Luxembourg') {
+              sliderWrapper.style.display = 'none';
+              resultPanel.style.display = 'none';
+              vdlContainer.style.display = 'block';
+          } else {
+              vdlContainer.style.display = 'none';
+              sliderWrapper.style.display = 'block';
+              resultPanel.style.display = 'block';
+              updateScoreUI(commune.th);
+          }
+          sendWidgetHeight();
+      }
+
+      function updateScoreUI(thValue) {
+          const th = parseFloat(thValue);
+          let score;
+
+          if (th < 5)        score = 100 - (th * 2); 
+          else if (th < 15)  score = 96 - (th * 1.4); 
+          else if (th < 30)  score = 98 - (th * 1.6);
+          else               score = 49 - ((th - 30) * 0.4); 
+
+          score = Math.max(30, Math.min(100, Math.round(score)));
+
+          let color, title, text;
+
+          if (th < 5) {
+              color = '#00ADEF';
+              title = "EXCELLENT SCORE";
+              text  = `Votre eau est douce (${th.toFixed(1)}°f). Vous profitez déjà d’un bon confort et d’installations bien préservées.`;
+              ctaBtn.style.display = 'none';
+
+          } else if (th < 15) {
+              color = '#00ADEF';
+              title = "BON SCORE, CONFORT OPTIMISABLE";
+              text  = `Votre eau est modérément calcaire (${th.toFixed(1)}°f). Un adoucisseur permet d’améliorer le confort et de prolonger la durée de vie de vos équipements.`;
+              ctaBtn.style.display = 'inline-block';
+
+          } else if (th < 30) {
+              color = '#E5007E';
+              title = "ADOUCISSEUR RECOMMANDÉ";
+              text  = `Votre eau est calcaire (${th.toFixed(1)}°f). Une solution adaptée améliorera nettement le confort et protégera vos installations dans le temps.`;
+              ctaBtn.style.display = 'inline-block';
+
+          } else {
+              color = '#F57F20';
+              title = "EAU TRÈS DURE : OPTIMISATION PRIORITAIRE";
+              text  = `Votre eau est très dure (${th.toFixed(1)}°f). Mettre en place une solution d’adoucissement vous apportera un confort durable et une meilleure protection de votre maison.`;
+              ctaBtn.style.display = 'inline-block';
+          }
+
+          verdictTitle.textContent = title;
+          verdictTitle.style.color = color;
+          verdictDesc.textContent = text;
+          scoreVal.textContent = score;
+          dropShape.style.background = color;
+          dropShape.style.borderColor = "white";
+          
+          drop.style.opacity = '1';
+          const percent = ((score - 30) / 70) * 100;
+          drop.style.left = `${percent}%`;
+
+          sendWidgetHeight();
+      }
+
+      document.addEventListener('click', (e) => {
+          if(input && suggestions && !input.contains(e.target) && !suggestions.contains(e.target)) {
+              suggestions.style.display = 'none';
+          }
+      });
+  });
+
+  window.addEventListener('load', sendWidgetHeight);
+})();
 </script>
 
 </body>
