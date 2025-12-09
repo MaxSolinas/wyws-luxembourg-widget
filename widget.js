@@ -2,11 +2,11 @@
   <style>
     /* --- CHARTE GRAPHIQUE KINETICO (DESIGN V15) --- */
     :root {
-      --k-blue: #0054A4;     
-      --k-cyan: #00ADEF;     
-      --k-orange: #F57F20;   
-      --k-magenta: #E5007E;  
-      --k-grey: #666666;     
+      --k-blue: #0054A4;     /* Pantone 661 C */
+      --k-cyan: #00ADEF;     /* Cyan 100% */
+      --k-orange: #F57F20;   /* Echelle Basse */
+      --k-magenta: #E5007E;  /* Echelle Moyenne */
+      --k-grey: #666666;     /* Texte secondaire */
     }
 
     #kinetico-widget-lux-score {
@@ -173,7 +173,7 @@
           <strong id="kw-title-lux" style="font-size: 1.2em; display:block; margin-bottom:8px;"></strong>
           <p id="kw-desc-lux" style="font-size: 0.95em; color:#555; margin:0; line-height: 1.5;"></p>
           
-          <a href="#" id="kw-cta-btn-lux" class="kw-cta-button">RAISE YOUR WATER SCORE TODAY!</a>
+          <a href="/durete-de-leau-au-luxembourg#Obtenez-votre-devis" id="kw-cta-btn-lux" class="kw-cta-button">RAISE YOUR WATER SCORE TODAY!</a>
         </div>
     </div>
 
@@ -193,9 +193,9 @@
     </div>
   </div>
 
-  <script type="3da4fa37b0516ee41cff9377-text/javascript">
+  <script>
     (function() {
-      // Config
+      // Configuration
       const API_URL = 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson';
 
       // Elements
