@@ -1,16 +1,17 @@
 (function() {
     // -----------------------------------------------------------
-    // CONFIGURATION
+    // 1. CONFIGURATION
     // -----------------------------------------------------------
     const CONFIG = {
         containerId: 'wyws-luxembourg-widget',
+        // URL EXACTE de votre script qui fonctionne
         apiUrl: 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson',
         vdlLink: 'https://www.vdl.lu/fr/vivre/domicile-au-quotidien/verifier-la-qualite-de-leau-chez-soi#',
         quoteLink: '/durete-de-leau-au-luxembourg#Obtenez-votre-devis'
     };
 
     // -----------------------------------------------------------
-    // STYLES CSS (Design V15 - Kinetico)
+    // 2. DESIGN CSS (Water Score V15)
     // -----------------------------------------------------------
     const css = `
         #wyws-luxembourg-container { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: visible; text-align: center; position: relative; }
@@ -29,6 +30,7 @@
         .kw-suggestion-item:hover { background: #f0f7ff; color: #0054A4; }
         .kw-result-panel { display: none; padding: 0 20px 30px; animation: kw-fadein 0.6s ease-out; }
         .kw-commune-title { font-size: 1.3rem; font-weight: bold; color: #0054A4; margin-top: 10px; }
+        .kw-zone-info { font-size: 0.9rem; color: #666; margin-bottom: 20px; font-style: italic; }
         .kw-slider-container { position: relative; height: 60px; margin: 40px 10px; }
         .kw-slider-bar { height: 40px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #F57F20 0%, #E5007E 50%, #00ADEF 100%); position: relative; top: 10px; }
         .kw-grid-lines { position: absolute; top: 10px; left: 0; width: 100%; height: 40px; display: flex; justify-content: space-between; pointer-events: none; }
@@ -50,7 +52,7 @@
     `;
 
     // -----------------------------------------------------------
-    // TEMPLATE HTML
+    // 3. HTML TEMPLATE
     // -----------------------------------------------------------
     const htmlTemplate = `
         <div id="wyws-luxembourg-container">
@@ -114,7 +116,7 @@
     `;
 
     // -----------------------------------------------------------
-    // LOGIQUE
+    // 4. LOGIQUE (COPIÉE DE VOTRE SCRIPT FONCTIONNEL)
     // -----------------------------------------------------------
     function initWidget() {
         const root = document.getElementById(CONFIG.containerId);
@@ -134,7 +136,6 @@
         const displayCommune = document.getElementById('kw-commune-display');
         const scoreContainer = document.getElementById('kw-score-container');
         const vdlContainer = document.getElementById('kw-vdl-container');
-        
         const drop = document.getElementById('kw-drop-lux');
         const dropShape = document.getElementById('kw-drop-shape-lux');
         const scoreVal = document.getElementById('kw-score-val-lux');
@@ -144,39 +145,25 @@
 
         let communesData = [];
 
-        // --- SCANNER DE DONNÉES AUTOMATIQUE ---
+        // CHARGEMENT EXACTEMENT COMME VOTRE SCRIPT D'ORIGINE
         async function loadData() {
             try {
                 loader.style.display = 'block';
                 const response = await fetch(CONFIG.apiUrl);
-                if (!response.ok) throw new Error('Erreur de connexion au fichier.');
+                if (!response.ok) throw new Error('Erreur réseau');
                 
                 const geoData = await response.json();
                 
-                if(!geoData.features || geoData.features.length === 0) throw new Error("Fichier vide.");
-
-                // SCANNER: On cherche la clé qui contient "Commune" et celle qui contient "Durete"
-                const props = geoData.features[0].properties;
-                let keyName = Object.keys(props).find(k => k.toLowerCase().includes("commune"));
-                let keyVal = Object.keys(props).find(k => k.toLowerCase().includes("wsz") || k.toLowerCase().includes("durete"));
-
-                if(!keyName || !keyVal) {
-                    console.warn("Scanner Auto échoué, tentative clés par défaut.");
-                    // Fallback manuel si le scanner rate
-                    keyName = 'trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune';
-                    keyVal = 'trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete';
-                }
-
                 const communesMap = new Map();
+                
+                // ICI: LA LOGIQUE EXACTE DE VOTRE ANCIEN SCRIPT
                 geoData.features.forEach(feature => {
-                    const name = feature.properties[keyName];
-                    const th = feature.properties[keyVal];
+                    const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
+                    const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
                     
-                    if (name && typeof name === 'string' && !name.startsWith('*')) {
-                        const cleanName = name.trim();
-                        if (!communesMap.has(cleanName)) {
-                            // On stocke la dureté (si null => 0)
-                            communesMap.set(cleanName, { name: cleanName, th: th !== null ? th : 0 });
+                    if (name && !name.startsWith('*')) {
+                        if (!communesMap.has(name)) {
+                            communesMap.set(name, { name: name, th: th !== null ? th : 0 });
                         }
                     }
                 });
@@ -187,7 +174,7 @@
             } catch (e) {
                 console.error(e);
                 loader.style.display = 'none';
-                errorMsg.innerHTML = "Données indisponibles.<br><small>" + e.message + "</small>";
+                errorMsg.innerHTML = "Impossible de charger les données.<br><small>Erreur technique ou fichier inaccessible.</small>";
                 errorMsg.style.display = 'block';
             }
         }
@@ -291,7 +278,7 @@
         loadData();
     }
 
-    // CHECKER AUTOMATIQUE
+    // CHECKER
     let attempts = 0;
     const interval = setInterval(function() {
         const root = document.getElementById(CONFIG.containerId);
