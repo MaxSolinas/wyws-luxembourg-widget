@@ -7,7 +7,7 @@
             <span class="kw-word-water">WATER</span> <span class="kw-word-score">SCORE?<sup class="kw-tm">TM</sup></span>
         </span>
     </h2>
-    <div class="kw-subtext">Découvrez la qualité de votre eau en quelques secondes.</div>
+    <div class="kw-subtext">Offrez à votre foyer une eau plus douce et plus agréable, en quelques secondes.</div>
   </div>
 
   <div class="kw-search-area">
@@ -44,7 +44,9 @@
     <div class="kw-message-box">
       <strong class="kw-verdict-title" style="font-size: 1.2em; display:block; margin-bottom:8px;"></strong>
       <p class="kw-verdict-desc" style="font-size: 0.95em; color:#555; margin:0; line-height: 1.5;"></p>
-      <a href="/durete-de-leau-au-luxembourg#Obtenez-votre-devis" class="kw-cta-button">RAISE YOUR WATER SCORE TODAY!</a>
+      <a href="/durete-de-leau-au-luxembourg#Obtenez-votre-devis" class="kw-cta-button">
+        Recevoir ma recommandation personnalisée
+      </a>
     </div>
   </div>
 
@@ -82,7 +84,6 @@
             .kw-suggestion-item { padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #f0f0f0; text-align: left; }
             .kw-suggestion-item:hover { background: #f0f7ff; color: #0054A4; }
             
-            /* SLIDER VISIBLE */
             .kw-slider-wrapper { padding: 0 20px; transition: opacity 0.3s; }
             .kw-slider-container { position: relative; height: 60px; margin: 20px 10px; }
             .kw-slider-bar { height: 40px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #F57F20 0%, #E5007E 50%, #00ADEF 100%); position: relative; top: 10px; }
@@ -119,6 +120,36 @@
       const API_URL = 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson';
       let globalCommunesData = null;
 
+      async function loadCommunesData(loader, errorMsg) {
+          if (globalCommunesData) return globalCommunesData;
+          loader.style.display = 'block';
+          try {
+              const response = await fetch(API_URL);
+              if (!response.ok) throw new Error('Erreur réseau: ' + response.status);
+              const geoData = await response.json();
+              const communesMap = new Map();
+              
+              geoData.features.forEach(feature => {
+                  const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
+                  const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
+                  if (name && !name.startsWith('*')) {
+                      if (!communesMap.has(name)) {
+                          communesMap.set(name, { name: name, th: th !== null ? th : 0 });
+                      }
+                  }
+              });
+              globalCommunesData = Array.from(communesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+              loader.style.display = 'none';
+              return globalCommunesData;
+          } catch(e) {
+              console.error('[Lux widget] Erreur chargement données:', e);
+              loader.style.display = 'none';
+              errorMsg.textContent = "Service momentanément indisponible.";
+              errorMsg.style.display = 'block';
+              throw e;
+          }
+      }
+
       widgets.forEach(widget => {
           widget.setAttribute('data-init', 'true');
           
@@ -139,47 +170,15 @@
           const verdictDesc = widget.querySelector('.kw-verdict-desc');
           const ctaBtn = widget.querySelector('.kw-cta-button');
 
-          // CHARGEMENT DONNEES
-          async function ensureDataLoaded() {
-              if (globalCommunesData) return globalCommunesData;
-              loader.style.display = 'block';
-              try {
-                  const response = await fetch(API_URL);
-                  if (!response.ok) throw new Error('Erreur réseau');
-                  const geoData = await response.json();
-                  const communesMap = new Map();
-                  
-                  geoData.features.forEach(feature => {
-                      const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
-                      const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
-                      if (name && !name.startsWith('*')) {
-                          if (!communesMap.has(name)) {
-                              communesMap.set(name, { name: name, th: th !== null ? th : 0 });
-                          }
-                      }
-                  });
-                  globalCommunesData = Array.from(communesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-                  return globalCommunesData;
-              } catch(e) { throw e; }
-          }
-
-          ensureDataLoaded()
-            .then(() => { loader.style.display = 'none'; })
-            .catch(e => {
-                console.error(e);
-                loader.style.display = 'none';
-                errorMsg.textContent = "Service indisponible momentanément.";
-                errorMsg.style.display = 'block';
-            });
+          // Préchargement
+          loadCommunesData(loader, errorMsg).catch(() => {});
 
           // RECHERCHE
           input.addEventListener('input', (e) => {
               const val = e.target.value.toLowerCase();
               
-              // Reset état recherche
               if(val.length < 2) { 
                   suggestions.style.display = 'none'; 
-                  // On garde le slider visible mais sans goutte si on efface
                   if(val.length === 0) {
                       drop.style.opacity = '0';
                       resultPanel.style.display = 'none';
@@ -191,7 +190,10 @@
               
               if (!globalCommunesData) return;
 
-              const matches = globalCommunesData.filter(c => c.name.toLowerCase().includes(val)).slice(0, 8);
+              const matches = globalCommunesData
+                .filter(c => c.name.toLowerCase().includes(val))
+                .slice(0, 8);
+
               suggestions.innerHTML = '';
               
               if(!matches.length) { suggestions.style.display = 'none'; return; }
@@ -215,12 +217,10 @@
               displayCommune.textContent = "Qualité de l'eau à " + commune.name;
               
               if (commune.name === 'Luxembourg') {
-                  // CAS VDL : On cache le slider, on montre la redirection
                   sliderWrapper.style.display = 'none';
                   resultPanel.style.display = 'none';
                   vdlContainer.style.display = 'block';
               } else {
-                  // CAS STANDARD : On montre slider et résultats
                   vdlContainer.style.display = 'none';
                   sliderWrapper.style.display = 'block';
                   resultPanel.style.display = 'block';
@@ -228,25 +228,43 @@
               }
           }
 
+          // SCORE + TEXTE VERSION "BIENFAITS"
           function updateScoreUI(thValue) {
               const th = parseFloat(thValue);
               let score;
-              // Calcul Paliers
-              if (th < 5) score = 100 - (th * 2); 
-              else if (th < 15) score = 96 - (th * 1.4); 
-              else if (th < 30) score = 98 - (th * 1.6);
-              else score = 49 - ((th - 30) * 0.4); 
+
+              if (th < 5)        score = 100 - (th * 2); 
+              else if (th < 15)  score = 96 - (th * 1.4); 
+              else if (th < 30)  score = 98 - (th * 1.6);
+              else               score = 49 - ((th - 30) * 0.4); 
+
               score = Math.max(30, Math.min(100, Math.round(score)));
 
               let color, title, text;
+
               if (th < 5) {
-                  color = '#00ADEF'; title = "EXCELLENT SCORE"; text = `Votre eau est douce (${th.toFixed(1)}°f). La qualité est idéale pour vos appareils.`; ctaBtn.style.display = 'none';
+                  color = '#00ADEF';
+                  title = "EXCELLENT SCORE";
+                  text  = `Votre eau est douce (${th.toFixed(1)}°f). Vous profitez déjà d’un excellent confort et d’installations bien préservées.`;
+                  ctaBtn.style.display = 'none';
+
               } else if (th < 15) {
-                  color = '#00ADEF'; title = "BON SCORE, MAIS..."; text = `Votre eau est peu calcaire (${th.toFixed(1)}°f). Votre confort pourrait tout de même être amélioré avec un adoucisseur d'eau.`; ctaBtn.style.display = 'inline-block';
+                  color = '#00ADEF';
+                  title = "BON SCORE, CONFORT OPTIMISABLE";
+                  text  = `Votre eau est modérément calcaire (${th.toFixed(1)}°f). Un adoucisseur permet d’améliorer le confort et de prolonger la durée de vie de vos équipements.`;
+                  ctaBtn.style.display = 'inline-block';
+
               } else if (th < 30) {
-                  color = '#E5007E'; title = "ADOUCISSEUR RECOMMANDÉ"; text = `Votre eau est calcaire (${th.toFixed(1)}°f). Un adoucisseur d'eau est vivement recommandé pour protéger votre maison.`; ctaBtn.style.display = 'inline-block';
+                  color = '#E5007E';
+                  title = "ADOUCISSEUR RECOMMANDÉ";
+                  text  = `Votre eau est calcaire (${th.toFixed(1)}°f). Une solution de traitement adaptée améliorera nettement le confort et protégera vos installations dans le temps.`;
+                  ctaBtn.style.display = 'inline-block';
+
               } else {
-                  color = '#F57F20'; title = "ADOUCISSEUR INDISPENSABLE"; text = `Votre eau est très dure (${th.toFixed(1)}°f). L'installation d'un adoucisseur d'eau est impérative pour éviter les dégâts.`; ctaBtn.style.display = 'inline-block';
+                  color = '#F57F20';
+                  title = "EAU TRÈS DURE : OPTIMISATION PRIORITAIRE";
+                  text  = `Votre eau est très dure (${th.toFixed(1)}°f). Mettre en place une solution d’adoucissement vous apportera un confort durable et une meilleure protection de votre maison.`;
+                  ctaBtn.style.display = 'inline-block';
               }
 
               verdictTitle.textContent = title;
@@ -256,7 +274,6 @@
               dropShape.style.background = color;
               dropShape.style.borderColor = "white";
               
-              // Animation : On affiche la goutte
               drop.style.opacity = '1';
               const percent = ((score - 30) / 70) * 100;
               drop.style.left = `${percent}%`;
