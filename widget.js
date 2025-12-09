@@ -4,32 +4,21 @@
     // -----------------------------------------------------------
     const CONFIG = {
         containerId: 'wyws-luxembourg-widget',
-        // URL du fichier GeoJSON (Vérifiez que ce lien est toujours valide)
         apiUrl: 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson',
         vdlLink: 'https://www.vdl.lu/fr/vivre/domicile-au-quotidien/verifier-la-qualite-de-leau-chez-soi#',
         quoteLink: '/durete-de-leau-au-luxembourg#Obtenez-votre-devis'
     };
 
     // -----------------------------------------------------------
-    // STYLES CSS
+    // STYLES CSS (Design V15 - Kinetico Validé)
     // -----------------------------------------------------------
     const css = `
-        #wyws-luxembourg-container {
-            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            max-width: 650px;
-            margin: 0 auto;
-            background: #fff;
-            border: 1px solid #e1e4e8;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-            overflow: visible; text-align: center; position: relative;
-        }
+        #wyws-luxembourg-container { font-family: 'Segoe UI', Arial, sans-serif; max-width: 650px; margin: 0 auto; background: #fff; border: 1px solid #e1e4e8; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); overflow: visible; text-align: center; position: relative; }
         .kw-header { padding: 30px 20px 10px; border-radius: 12px 12px 0 0; }
         .kw-headline { text-transform: uppercase; line-height: 1.1; color: #00ADEF; font-size: 2.2rem; margin: 0; }
         .kw-top-line { font-weight: 800; display: block; }
         .kw-second-line { display: block; color: #0054A4; }
-        .kw-word-water { font-weight: 400; } 
-        .kw-word-score { font-weight: 800; }
+        .kw-word-water { font-weight: 400; } .kw-word-score { font-weight: 800; }
         .kw-tm { font-size: 0.3em; vertical-align: top; position: relative; top: 0.1em; font-weight: 400; margin-left: 2px; line-height: 1; }
         .kw-subtext { color: #666; margin-top: 10px; font-size: 0.95rem; }
         .kw-search-area { padding: 0 30px 20px; position: relative; }
@@ -40,7 +29,6 @@
         .kw-suggestion-item:hover { background: #f0f7ff; color: #0054A4; }
         .kw-result-panel { display: none; padding: 0 20px 30px; animation: kw-fadein 0.6s ease-out; }
         .kw-commune-title { font-size: 1.3rem; font-weight: bold; color: #0054A4; margin-top: 10px; }
-        .kw-zone-info { font-size: 0.9rem; color: #666; margin-bottom: 20px; font-style: italic; }
         .kw-slider-container { position: relative; height: 60px; margin: 40px 10px; }
         .kw-slider-bar { height: 40px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #F57F20 0%, #E5007E 50%, #00ADEF 100%); position: relative; top: 10px; }
         .kw-grid-lines { position: absolute; top: 10px; left: 0; width: 100%; height: 40px; display: flex; justify-content: space-between; pointer-events: none; }
@@ -58,12 +46,11 @@
         .kw-dealer-info { font-size: 11px; color: #555; font-weight: 400; font-family: Arial, sans-serif; line-height: 1.4; display: block; }
         .kw-source-data { font-size: 9px; color: #aaa; margin-top: 10px; display: block; }
         .kw-loader { color: #888; display: none; margin: 20px; font-style: italic; }
-        .kw-error-msg { color: #d32f2f; display: none; margin: 20px; font-weight: bold; padding: 10px; background: #fff5f5; border-radius: 5px; }
-        @keyframes kw-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .kw-error-msg { color: #d32f2f; display: none; margin: 20px; font-weight: bold; padding: 15px; background: #ffebee; border-radius: 8px; font-size: 0.9em;}
     `;
 
     // -----------------------------------------------------------
-    // STRUCTURE HTML
+    // TEMPLATE HTML
     // -----------------------------------------------------------
     const htmlTemplate = `
         <div id="wyws-luxembourg-container">
@@ -131,15 +118,14 @@
     // -----------------------------------------------------------
     function initWidget() {
         const root = document.getElementById(CONFIG.containerId);
-        if (!root) return; 
+        if (!root) return;
 
         const styleTag = document.createElement('style');
         styleTag.textContent = css;
         document.head.appendChild(styleTag);
-
         root.innerHTML = htmlTemplate;
 
-        // Variables
+        // Elements
         const input = document.getElementById('kw-input-lux');
         const suggestions = document.getElementById('kw-suggestions-lux');
         const resultPanel = document.getElementById('kw-result-lux');
@@ -157,53 +143,50 @@
 
         let communesData = [];
 
-        // LOAD DATA
+        // CHARGEMENT DES DONNÉES (Méthode Stricte)
         async function loadData() {
             try {
                 loader.style.display = 'block';
-                errorMsg.style.display = 'none';
-                
                 const response = await fetch(CONFIG.apiUrl);
-                if (!response.ok) throw new Error('Impossible de contacter le serveur de données (404/500).');
+                if (!response.ok) throw new Error('Erreur de connexion au fichier de données.');
                 
                 const geoData = await response.json();
                 
                 const communesMap = new Map();
-                if(geoData.features) {
-                    geoData.features.forEach(feature => {
-                        const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
-                        const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
-                        if (name && !name.startsWith('*')) {
-                            if (!communesMap.has(name)) {
-                                communesMap.set(name, { name: name, th: th !== null ? th : 0 });
-                            }
+                geoData.features.forEach(feature => {
+                    // UTILISATION DES NOMS DE COLONNES EXACTS
+                    const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
+                    const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
+                    
+                    if (name && typeof name === 'string' && !name.startsWith('*')) {
+                        const cleanName = name.trim();
+                        if (!communesMap.has(cleanName)) {
+                            // Si la dureté est null, on met 0 par défaut
+                            const safeTH = (th !== null && th !== undefined) ? parseFloat(th) : 0;
+                            communesMap.set(cleanName, { name: cleanName, th: safeTH });
                         }
-                    });
-                }
+                    }
+                });
                 
                 communesData = Array.from(communesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
-                loader.style.display = 'none';
                 
-                if(communesData.length === 0) {
-                    throw new Error("Fichier de données vide ou mal formaté.");
-                }
+                loader.style.display = 'none';
+                // console.log("Données chargées : " + communesData.length); // Debug
 
             } catch (e) {
-                console.error("Widget Error:", e);
+                console.error(e);
                 loader.style.display = 'none';
-                errorMsg.innerHTML = "Les données sont temporairement indisponibles.<br>Veuillez réessayer plus tard.";
+                errorMsg.innerHTML = "Impossible de charger les données.<br><small>Veuillez rafraîchir la page.</small>";
                 errorMsg.style.display = 'block';
             }
         }
 
-        // SEARCH
+        // MOTEUR DE RECHERCHE
         input.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             resultPanel.style.display = 'none';
             if(val.length < 2) { suggestions.style.display = 'none'; return; }
-            
-            // Sécurité si les données ne sont pas chargées
-            if(!communesData || communesData.length === 0) return;
+            if(communesData.length === 0) return;
 
             const matches = communesData.filter(c => c.name.toLowerCase().includes(val)).slice(0, 8);
             renderSuggestions(matches);
@@ -212,6 +195,7 @@
         function renderSuggestions(list) {
             suggestions.innerHTML = '';
             if(!list.length) { suggestions.style.display = 'none'; return; }
+
             list.forEach(c => {
                 const div = document.createElement('div');
                 div.className = 'kw-suggestion-item';
@@ -226,10 +210,12 @@
             suggestions.style.display = 'block';
         }
 
+        // AFFICHAGE
         function processSelection(commune) {
             displayCommune.textContent = "Qualité de l'eau à " + commune.name;
             resultPanel.style.display = 'block';
-            if (commune.name === 'Luxembourg') {
+
+            if (commune.name.toLowerCase() === 'luxembourg') {
                 scoreContainer.style.display = 'none';
                 vdlContainer.style.display = 'block';
             } else {
@@ -239,24 +225,41 @@
             }
         }
 
+        // CALCUL SCORE & UI
         function updateScoreUI(thValue) {
-            const th = parseFloat(thValue);
+            const th = thValue;
             let score;
+
+            // Formule Paliers
             if (th < 5) score = 100 - (th * 2); 
             else if (th < 15) score = 96 - (th * 1.4); 
             else if (th < 30) score = 98 - (th * 1.6);
             else score = 49 - ((th - 30) * 0.4); 
+            
             score = Math.max(30, Math.min(100, Math.round(score)));
 
             let color, title, text;
+            
             if (th < 5) {
-                color = '#00ADEF'; title = "EXCELLENT SCORE"; text = `Votre eau est douce (${th.toFixed(1)}°f). La qualité est idéale pour vos appareils.`; ctaBtn.style.display = 'none';
+                color = '#00ADEF';
+                title = "EXCELLENT SCORE";
+                text = `Votre eau est douce (${th.toFixed(1)}°f). La qualité est idéale pour vos appareils.`;
+                ctaBtn.style.display = 'none';
             } else if (th < 15) {
-                color = '#00ADEF'; title = "BON SCORE, MAIS..."; text = `Votre eau est peu calcaire (${th.toFixed(1)}°f). Votre confort pourrait tout de même être amélioré avec un adoucisseur d'eau.`; ctaBtn.style.display = 'inline-block';
+                color = '#00ADEF';
+                title = "BON SCORE, MAIS...";
+                text = `Votre eau est peu calcaire (${th.toFixed(1)}°f). Votre confort pourrait tout de même être amélioré avec un adoucisseur d'eau.`;
+                ctaBtn.style.display = 'inline-block';
             } else if (th < 30) {
-                color = '#E5007E'; title = "ADOUCISSEUR RECOMMANDÉ"; text = `Votre eau est calcaire (${th.toFixed(1)}°f). Un adoucisseur d'eau est vivement recommandé pour protéger votre maison.`; ctaBtn.style.display = 'inline-block';
+                color = '#E5007E';
+                title = "ADOUCISSEUR RECOMMANDÉ";
+                text = `Votre eau est calcaire (${th.toFixed(1)}°f). Un adoucisseur d'eau est vivement recommandé pour protéger votre maison.`;
+                ctaBtn.style.display = 'inline-block';
             } else {
-                color = '#F57F20'; title = "ADOUCISSEUR INDISPENSABLE"; text = `Votre eau est très dure (${th.toFixed(1)}°f). L'installation d'un adoucisseur d'eau est impérative pour éviter les dégâts.`; ctaBtn.style.display = 'inline-block';
+                color = '#F57F20';
+                title = "ADOUCISSEUR INDISPENSABLE";
+                text = `Votre eau est très dure (${th.toFixed(1)}°f). L'installation d'un adoucisseur d'eau est impérative pour éviter les dégâts.`;
+                ctaBtn.style.display = 'inline-block';
             }
 
             titleEl.textContent = title;
@@ -278,6 +281,7 @@
         loadData();
     }
 
+    // CHECKER AUTOMATIQUE (Polling pour CMS)
     let attempts = 0;
     const interval = setInterval(function() {
         const root = document.getElementById(CONFIG.containerId);
