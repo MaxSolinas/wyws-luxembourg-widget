@@ -3,14 +3,15 @@
     // CONFIGURATION
     // -----------------------------------------------------------
     const CONFIG = {
-        containerId: 'wyws-luxembourg-widget', // NOUVEAU NOM
+        containerId: 'wyws-luxembourg-widget',
+        // URL du fichier GeoJSON (Vérifiez que ce lien est toujours valide)
         apiUrl: 'https://download.data.public.lu/resources/durete-de-leau/20251111-020330/wasserharte.geojson',
         vdlLink: 'https://www.vdl.lu/fr/vivre/domicile-au-quotidien/verifier-la-qualite-de-leau-chez-soi#',
         quoteLink: '/durete-de-leau-au-luxembourg#Obtenez-votre-devis'
     };
 
     // -----------------------------------------------------------
-    // STYLES CSS (Injectés dynamiquement)
+    // STYLES CSS
     // -----------------------------------------------------------
     const css = `
         #wyws-luxembourg-container {
@@ -39,6 +40,7 @@
         .kw-suggestion-item:hover { background: #f0f7ff; color: #0054A4; }
         .kw-result-panel { display: none; padding: 0 20px 30px; animation: kw-fadein 0.6s ease-out; }
         .kw-commune-title { font-size: 1.3rem; font-weight: bold; color: #0054A4; margin-top: 10px; }
+        .kw-zone-info { font-size: 0.9rem; color: #666; margin-bottom: 20px; font-style: italic; }
         .kw-slider-container { position: relative; height: 60px; margin: 40px 10px; }
         .kw-slider-bar { height: 40px; width: 100%; border-radius: 4px; background: linear-gradient(90deg, #F57F20 0%, #E5007E 50%, #00ADEF 100%); position: relative; top: 10px; }
         .kw-grid-lines { position: absolute; top: 10px; left: 0; width: 100%; height: 40px; display: flex; justify-content: space-between; pointer-events: none; }
@@ -56,12 +58,12 @@
         .kw-dealer-info { font-size: 11px; color: #555; font-weight: 400; font-family: Arial, sans-serif; line-height: 1.4; display: block; }
         .kw-source-data { font-size: 9px; color: #aaa; margin-top: 10px; display: block; }
         .kw-loader { color: #888; display: none; margin: 20px; font-style: italic; }
-        .kw-error-msg { color: #d32f2f; display: none; margin: 20px; font-weight: bold; }
+        .kw-error-msg { color: #d32f2f; display: none; margin: 20px; font-weight: bold; padding: 10px; background: #fff5f5; border-radius: 5px; }
         @keyframes kw-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     `;
 
     // -----------------------------------------------------------
-    // STRUCTURE HTML (Injectée dynamiquement)
+    // STRUCTURE HTML
     // -----------------------------------------------------------
     const htmlTemplate = `
         <div id="wyws-luxembourg-container">
@@ -125,7 +127,7 @@
     `;
 
     // -----------------------------------------------------------
-    // LOGIQUE DU WIDGET
+    // LOGIQUE
     // -----------------------------------------------------------
     function initWidget() {
         const root = document.getElementById(CONFIG.containerId);
@@ -137,7 +139,7 @@
 
         root.innerHTML = htmlTemplate;
 
-        // Variables DOM
+        // Variables
         const input = document.getElementById('kw-input-lux');
         const suggestions = document.getElementById('kw-suggestions-lux');
         const resultPanel = document.getElementById('kw-result-lux');
@@ -155,39 +157,54 @@
 
         let communesData = [];
 
-        // Chargement Données
+        // LOAD DATA
         async function loadData() {
             try {
                 loader.style.display = 'block';
+                errorMsg.style.display = 'none';
+                
                 const response = await fetch(CONFIG.apiUrl);
-                if (!response.ok) throw new Error('Erreur réseau');
+                if (!response.ok) throw new Error('Impossible de contacter le serveur de données (404/500).');
+                
                 const geoData = await response.json();
                 
                 const communesMap = new Map();
-                geoData.features.forEach(feature => {
-                    const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
-                    const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
-                    if (name && !name.startsWith('*')) {
-                        if (!communesMap.has(name)) {
-                            communesMap.set(name, { name: name, th: th !== null ? th : 0 });
+                if(geoData.features) {
+                    geoData.features.forEach(feature => {
+                        const name = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.Commune'];
+                        const th = feature.properties['trinkwasser.GISADMIN.DWDnationalReportingDurete.WSZDurete'];
+                        if (name && !name.startsWith('*')) {
+                            if (!communesMap.has(name)) {
+                                communesMap.set(name, { name: name, th: th !== null ? th : 0 });
+                            }
                         }
-                    }
-                });
+                    });
+                }
+                
                 communesData = Array.from(communesMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'fr'));
                 loader.style.display = 'none';
+                
+                if(communesData.length === 0) {
+                    throw new Error("Fichier de données vide ou mal formaté.");
+                }
+
             } catch (e) {
-                console.error(e);
+                console.error("Widget Error:", e);
                 loader.style.display = 'none';
-                errorMsg.textContent = "Erreur de chargement des données.";
+                errorMsg.innerHTML = "Les données sont temporairement indisponibles.<br>Veuillez réessayer plus tard.";
                 errorMsg.style.display = 'block';
             }
         }
 
-        // Recherche
+        // SEARCH
         input.addEventListener('input', (e) => {
             const val = e.target.value.toLowerCase();
             resultPanel.style.display = 'none';
             if(val.length < 2) { suggestions.style.display = 'none'; return; }
+            
+            // Sécurité si les données ne sont pas chargées
+            if(!communesData || communesData.length === 0) return;
+
             const matches = communesData.filter(c => c.name.toLowerCase().includes(val)).slice(0, 8);
             renderSuggestions(matches);
         });
@@ -209,7 +226,6 @@
             suggestions.style.display = 'block';
         }
 
-        // Affichage
         function processSelection(commune) {
             displayCommune.textContent = "Qualité de l'eau à " + commune.name;
             resultPanel.style.display = 'block';
@@ -262,9 +278,6 @@
         loadData();
     }
 
-    // -----------------------------------------------------------
-    // CHARGEMENT INTELLIGENT
-    // -----------------------------------------------------------
     let attempts = 0;
     const interval = setInterval(function() {
         const root = document.getElementById(CONFIG.containerId);
